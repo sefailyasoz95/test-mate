@@ -70,7 +70,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ received: true });
   } catch (err) {
     return NextResponse.json(
-      { error: "Webhook signature verification failed" },
+      {
+        error: "Webhook signature verification failed: " + JSON.stringify(err),
+      },
       { status: 400 }
     );
   }
