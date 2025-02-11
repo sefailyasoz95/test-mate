@@ -7,30 +7,43 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2025-01-27.acacia",
 });
 
-export async function POST(req: Request) {
-  const body = await req.text();
-  const headersList = await headers();
-  const signature = headersList.get("stripe-signature");
+// Disable body parser
+export const config = {
+  api: {
+    bodyParser: false,
+  },
+};
 
-  if (!signature) {
-    return NextResponse.json(
-      { error: "Missing stripe-signature header" },
-      { status: 400 }
-    );
-  }
-
+export async function POST(request: Request) {
   try {
-    const event = stripe.webhooks.constructEvent(
-      body,
-      signature,
-      process.env.STRIPE_WEBHOOK_SECRET!
-    );
+    const body = await request.text();
+    const headersList = await headers();
+    const signature = headersList.get("stripe-signature");
 
-    console.log("Webhook received:", event.type);
+    if (!signature) {
+      return NextResponse.json(
+        { error: "Missing stripe-signature header" },
+        { status: 400 }
+      );
+    }
 
+    // Verify webhook signature
+    let event: Stripe.Event;
+    try {
+      event = stripe.webhooks.constructEvent(
+        body,
+        signature,
+        process.env.STRIPE_WEBHOOK_SECRET!
+      );
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Unknown error";
+      console.error("Webhook signature verification failed:", errorMessage);
+      return NextResponse.json({ error: errorMessage }, { status: 400 });
+    }
+
+    // Handle the event
     if (event.type === "checkout.session.completed") {
       const session = event.data.object as Stripe.Checkout.Session;
-
       const { app_id, user_id, package_type } = session.metadata || {};
 
       if (!app_id || !user_id || !package_type) {
@@ -63,9 +76,3 @@ export async function POST(req: Request) {
     );
   }
 }
-
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-};
