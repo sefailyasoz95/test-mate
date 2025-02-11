@@ -1,27 +1,24 @@
-"use client"
-import { createClient } from '@/lib/supabase/client'
-import { Button } from '@/components/ui/button'
-import { motion } from 'framer-motion'
+"use client";
+import { createClient, supabase } from "@/lib/supabase/client";
+import { Button } from "@/components/ui/button";
+import { motion } from "framer-motion";
 
 export function SignIn() {
-  const supabase = createClient()
-
   const handleSignIn = async () => {
     const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
+      provider: "google",
       options: {
         redirectTo: `${location.origin}/auth/callback`,
         queryParams: {
-          access_type: 'offline',
-          prompt: 'consent',
+          access_type: "offline",
+          prompt: "consent",
         },
       },
-    })
+    });
 
     if (error) {
-      console.error('Error signing in:', error.message)
     }
-  }
+  };
 
   return (
     <motion.div
@@ -61,5 +58,5 @@ export function SignIn() {
         </motion.span>
       </Button>
     </motion.div>
-  )
+  );
 }

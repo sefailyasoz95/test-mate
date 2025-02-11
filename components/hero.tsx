@@ -18,6 +18,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { useTheme } from "next-themes";
+import { toast } from "sonner";
 
 const Hero = () => {
   const { theme } = useTheme();
@@ -49,11 +50,15 @@ const Hero = () => {
       });
 
       if (error) {
-        console.error("SignIn Error:", error.message);
+        toast.error("Sign in failed", {
+          description: error.message,
+        });
         throw error;
       }
     } catch (error) {
-      console.error("Error signing in:", error);
+      toast.error("Something went wrong", {
+        description: "Please try again later",
+      });
     }
   };
 

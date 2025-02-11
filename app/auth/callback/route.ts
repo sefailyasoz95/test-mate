@@ -1,5 +1,6 @@
 import { createServer } from "@/lib/supabase/client";
 import { NextRequest, NextResponse } from "next/server";
+import { toast } from "sonner";
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL!;
 
@@ -20,34 +21,27 @@ export async function GET(request: NextRequest) {
 
   // If there's an error in the URL, log it and redirect to error page
   if (error) {
-    console.error("Auth error:", error, errorDescription);
+    toast.error("Authentication failed", {
+      description: errorDescription || "Please try again",
+    });
     return NextResponse.redirect(`${APP_URL}/auth-error`);
   }
 
   if (!code) {
-    console.log("No code found in URL");
     return NextResponse.redirect(`${APP_URL}/auth-error`);
   }
 
   try {
-    console.log("Creating Supabase client...");
     const supabase = await createServer({ cookies: () => request.cookies });
 
-    console.log("Exchanging code for session...");
     const { data, error } = await supabase.auth.exchangeCodeForSession(code);
 
     if (error) {
-      console.error("5. Exchange error:", error);
       return NextResponse.redirect(`${APP_URL}/auth-error`);
     }
-
-    console.log("Code exchange successful, getting session...");
     const {
       data: { session },
     } = await supabase.auth.getSession();
-
-    console.log("6. Session established:", !!session);
-    console.log("7. Redirecting to:", `${APP_URL}/dashboard`);
 
     const response = NextResponse.redirect(`${APP_URL}/dashboard`);
 
@@ -55,11 +49,6 @@ export async function GET(request: NextRequest) {
     const supabaseCookies = request.cookies
       .getAll()
       .filter((cookie) => cookie.name.startsWith("sb-"));
-    console.log(
-      "8. Auth cookies:",
-      supabaseCookies.map((c) => c.name)
-    );
-
     for (const cookie of supabaseCookies) {
       response.cookies.set(cookie.name, cookie.value, {
         path: "/",
@@ -70,7 +59,6 @@ export async function GET(request: NextRequest) {
 
     return response;
   } catch (error) {
-    console.error("9. Callback error:", error);
     return NextResponse.redirect(`${APP_URL}/auth-error`);
   }
 }

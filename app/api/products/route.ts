@@ -32,7 +32,6 @@ export async function GET() {
 
     return NextResponse.json(formattedProducts);
   } catch (error) {
-    console.error("Error fetching products:", error);
     return NextResponse.json(
       {
         error:

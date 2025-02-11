@@ -54,7 +54,6 @@ export function AllocateTestersModal({
         const data = await response.json();
         setProducts(data);
       } catch (error) {
-        console.error("Error fetching products:", error);
       } finally {
         setIsLoading(false);
       }
@@ -180,11 +179,8 @@ export function AllocateTestersModal({
                           });
 
                           if (result.error) {
-                            console.error(result.error);
                           }
-                        } catch (error) {
-                          console.error("Error:", error);
-                        }
+                        } catch (error) {}
                       }}
                     >
                       Get Started

@@ -42,6 +42,8 @@ export default function DashboardPage() {
     apps: [],
   });
   const [isLoading, setIsLoading] = useState(true);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+
   async function fetchDashboardData() {
     if (!user?.id) return;
 
@@ -96,6 +98,11 @@ export default function DashboardPage() {
   useEffect(() => {
     fetchDashboardData();
   }, [user?.id]);
+
+  const handleCreateSuccess = () => {
+    fetchDashboardData();
+    setIsCreateDialogOpen(false);
+  };
 
   if (isLoading) {
     return (
@@ -185,76 +192,63 @@ export default function DashboardPage() {
           </div>
         </TabsContent>
 
-        <TabsContent value="apps">
+        <TabsContent value="apps" className="space-y-4">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-2xl font-bold">Your Apps</h2>
+            <Button size="sm" onClick={() => setIsCreateDialogOpen(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Add App
+            </Button>
+          </div>
+
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle>Your Apps</CardTitle>
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button size="sm">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add App
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Create New App</DialogTitle>
-                  </DialogHeader>
-                  <CreateAppForm
-                    onSuccess={() => {
-                      fetchDashboardData();
-                    }}
-                    onCancel={() => {
-                      const dialogTrigger = document.querySelector(
-                        '[aria-label="Close"]'
-                      );
-                      if (dialogTrigger instanceof HTMLButtonElement) {
-                        dialogTrigger.click();
-                      }
-                    }}
-                  />
-                </DialogContent>
-              </Dialog>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {isLoading ? (
-                  <p className="text-muted-foreground">Loading apps...</p>
-                ) : stats.apps.length === 0 ? (
-                  <p className="text-muted-foreground">
-                    No apps registered yet.
-                  </p>
-                ) : (
-                  stats.apps.map((app) => (
-                    <div
-                      key={app.id}
-                      className="flex items-center justify-between p-4 border rounded-lg"
-                    >
-                      <div>
-                        <h3 className="font-medium">{app.name}</h3>
-                        <p className="text-sm text-muted-foreground">
-                          {app.package_name}
-                        </p>
-                      </div>
-                      <div className="flex flex-col items-end gap-2">
-                        <AllocateTestersModal
-                          appId={app.id}
-                          appName={app.name}
-                          userId={user?.id || ""}
-                        />
-                        <p className="text-xs text-muted-foreground">
-                          Created on{" "}
-                          {new Date(app.created_at).toLocaleDateString()}
-                        </p>
-                      </div>
+            <CardContent className="">
+              {isLoading ? (
+                <p className="text-muted-foreground">Loading apps...</p>
+              ) : stats.apps.length === 0 ? (
+                <p className="text-muted-foreground">No apps registered yet.</p>
+              ) : (
+                stats.apps.map((app) => (
+                  <div
+                    key={app.id}
+                    className="flex items-center justify-between p-4 border rounded-lg mt-5"
+                  >
+                    <div>
+                      <h3 className="font-medium">{app.name}</h3>
+                      <p className="text-sm text-muted-foreground">
+                        {app.package_name}
+                      </p>
                     </div>
-                  ))
-                )}
-              </div>
+                    <div className="flex flex-col items-end gap-2">
+                      <AllocateTestersModal
+                        appId={app.id}
+                        appName={app.name}
+                        userId={user?.id || ""}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Created on{" "}
+                        {new Date(app.created_at).toLocaleDateString()}
+                      </p>
+                    </div>
+                  </div>
+                ))
+              )}
             </CardContent>
           </Card>
         </TabsContent>
       </Tabs>
+
+      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create New App</DialogTitle>
+          </DialogHeader>
+          <CreateAppForm
+            onSuccess={handleCreateSuccess}
+            onCancel={() => setIsCreateDialogOpen(false)}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

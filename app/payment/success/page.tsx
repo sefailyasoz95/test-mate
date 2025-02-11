@@ -2,6 +2,7 @@
 
 import { useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { toast } from "sonner";
 
 function PaymentSuccessContent() {
   const router = useRouter();
@@ -10,6 +11,9 @@ function PaymentSuccessContent() {
 
   useEffect(() => {
     if (sessionId) {
+      toast.success("Payment successful!", {
+        description: "Redirecting to dashboard...",
+      });
       setTimeout(() => {
         window.location.href = `${process.env.NEXT_PUBLIC_APP_URL}/dashboard`;
       }, 3000);

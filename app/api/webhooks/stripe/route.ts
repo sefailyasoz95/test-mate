@@ -32,7 +32,6 @@ export async function POST(request: NextRequest) {
 
   try {
     if (!sig || !webhookSecret) {
-      console.error("Missing signature or webhook secret");
       return NextResponse.json(
         { error: "Missing signature or webhook secret" },
         { status: 400 }
@@ -42,7 +41,6 @@ export async function POST(request: NextRequest) {
     // Use constructEventAsync instead of constructEvent
     event = await stripe.webhooks.constructEventAsync(body, sig, webhookSecret);
   } catch (err: any) {
-    console.error("Webhook signature verification failed:", err.message);
     return NextResponse.json(
       { error: `Webhook Error: ${err.message}` },
       { status: 400 }
@@ -72,14 +70,12 @@ export async function POST(request: NextRequest) {
         });
 
         if (error) {
-          console.error("Database error:", error);
           throw error;
         }
       }
 
       return NextResponse.json({ received: true });
     } catch (error) {
-      console.error("Webhook handler failed:", error);
       return NextResponse.json(
         { error: "Webhook handler failed" },
         { status: 500 }

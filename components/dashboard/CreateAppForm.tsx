@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { createClient, supabase } from "@/lib/supabase/client";
+import { toast } from "sonner";
 
 const formSchema = z.object({
   name: z.string().min(2, "App name must be at least 2 characters"),
@@ -40,24 +41,40 @@ export function CreateAppForm({
   });
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
 
-    if (!user) return;
+      if (!user) {
+        toast.error("Authentication required", {
+          description: "Please sign in to create an app",
+        });
+        return;
+      }
 
-    const { error } = await supabase.from("apps").insert([
-      {
+      const { error } = await supabase.from("apps").insert({
+        user_id: user.id,
         name: values.name,
         package_name: values.package_name,
-        user_id: user.id,
-      },
-    ]);
+      });
 
-    if (!error) {
+      if (error) {
+        toast.error("Failed to create app", {
+          description: error.message,
+        });
+        throw error;
+      }
+
+      toast.success("App created successfully", {
+        description: "You can now allocate testers",
+      });
       form.reset();
       onSuccess();
-      onCancel();
+    } catch (error) {
+      toast.error("Something went wrong", {
+        description: "Please try again later",
+      });
     }
   }
 
