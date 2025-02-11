@@ -8,7 +8,7 @@ import {
   FaGoogle,
 } from "react-icons/fa";
 import React, { useEffect, useState } from "react";
-import { createClient } from "@/utils/supabase/client";
+import { supabase } from "@/lib/supabase/client";
 import {
   Dialog,
   DialogContent,
@@ -20,7 +20,6 @@ import {
 import { useTheme } from "next-themes";
 
 const Hero = () => {
-  const supabase = createClient();
   const { theme } = useTheme();
   const [mounted, setMounted] = useState(false);
 

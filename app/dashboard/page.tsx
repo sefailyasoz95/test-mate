@@ -3,7 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/useAuth";
-import { createClient } from "@/utils/supabase/client";
+import { supabase } from "@/lib/supabase/client";
 import { useEffect, useState } from "react";
 import { Activity, Package, Clock, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -44,8 +44,6 @@ export default function DashboardPage() {
   const [isLoading, setIsLoading] = useState(true);
   async function fetchDashboardData() {
     if (!user?.id) return;
-
-    const supabase = createClient();
 
     // Fetch apps count
     const { count: appsCount } = await supabase
@@ -100,7 +98,11 @@ export default function DashboardPage() {
   }, [user?.id]);
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="w-screen h-screen flex items-center justify-center">
+        <h1>Loading...</h1>
+      </div>
+    );
   }
 
   return (

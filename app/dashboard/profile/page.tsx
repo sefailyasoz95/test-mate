@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/hooks/useAuth";
-import { createClient } from "@/utils/supabase/client";
+import { createClient, supabase } from "@/lib/supabase/client";
 import { useEffect, useState } from "react";
 
 interface Purchase {
@@ -15,13 +15,12 @@ interface Purchase {
 }
 
 export default function ProfilePage() {
-  const { profile, isLoading } = useAuth();
+  const { user, isLoading } = useAuth();
   const [purchases, setPurchases] = useState<Purchase[]>([]);
   const [purchasesLoading, setPurchasesLoading] = useState(true);
 
   useEffect(() => {
     async function fetchPurchases() {
-      const supabase = createClient();
       const { data } = await supabase
         .from("purchases")
         .select("*")
@@ -47,7 +46,7 @@ export default function ProfilePage() {
         <CardContent className="space-y-4">
           <div>
             <label className="text-sm font-medium">Email</label>
-            <p className="text-lg">{profile?.email}</p>
+            <p className="text-lg">{user?.email}</p>
           </div>
           <div>
             <label className="text-sm font-medium">Name</label>

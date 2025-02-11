@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/dialog";
 import { CreateAppForm } from "@/components/dashboard/CreateAppForm";
 import { useEffect, useState } from "react";
-import { createClient } from "@/utils/supabase/client";
+import { createClient } from "@/lib/supabase/client";
 import { AllocateTestersModal } from "@/components/dashboard/AllocateTestersModal";
 
 interface App {

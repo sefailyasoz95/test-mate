@@ -1,7 +1,7 @@
 import { headers } from "next/headers";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
-import { createClient } from "@/utils/supabase/server";
+import { createServer } from "@/lib/supabase/client";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2025-01-27.acacia",
@@ -22,7 +22,7 @@ export const config = {
   },
 };
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   const body = await request.text();
   const headersList = await headers();
   const sig = headersList.get("stripe-signature");
@@ -59,7 +59,9 @@ export async function POST(request: Request) {
           throw new Error("Missing required metadata");
         }
 
-        const supabase = await createClient();
+        const res = NextResponse.next();
+        const cookieStore = request.cookies;
+        const supabase = await createServer({ cookies: () => cookieStore });
         const { error } = await supabase.from("purchases").insert({
           user_id,
           app_id,

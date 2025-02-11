@@ -20,16 +20,7 @@ import Link from "next/link";
 export function UserNav() {
   const router = useRouter();
   const { theme, setTheme } = useTheme();
-  const { profile, isLoading, signOut } = useAuth();
-
-  const getInitials = (name: string) => {
-    return name
-      .split(" ")
-      .map((word) => word[0])
-      .join("")
-      .toUpperCase()
-      .slice(0, 2);
-  };
+  const { user, isLoading, signOut } = useAuth();
 
   const handleSignOut = async () => {
     await signOut();
@@ -52,7 +43,7 @@ export function UserNav() {
               {isLoading ? "Loading..." : "User"}
             </p>
             <p className="text-xs leading-none text-muted-foreground">
-              {isLoading ? "Loading..." : profile?.email || "No email"}
+              {isLoading ? "Loading..." : user?.email || "No email"}
             </p>
           </div>
         </DropdownMenuLabel>
