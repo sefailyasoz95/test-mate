@@ -12,7 +12,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { createClient } from "@/lib/supabase/client";
+import { createClient, supabase } from "@/lib/supabase/client";
 
 const formSchema = z.object({
   name: z.string().min(2, "App name must be at least 2 characters"),
@@ -40,7 +40,6 @@ export function CreateAppForm({
   });
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    const supabase = createClient();
     const {
       data: { user },
     } = await supabase.auth.getUser();

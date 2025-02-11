@@ -22,7 +22,6 @@ import { useTheme } from "next-themes";
 const Hero = () => {
   const { theme } = useTheme();
   const [mounted, setMounted] = useState(false);
-  console.log("2. APP_URL value:", process.env.NEXT_PUBLIC_APP_URL);
 
   // Wait until mounted to avoid hydration mismatch
   useEffect(() => {
