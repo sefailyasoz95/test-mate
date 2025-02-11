@@ -9,55 +9,48 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 
 export async function POST(req: Request) {
   const body = await req.text();
-  const signature = (await headers()).get("Stripe-Signature") as string;
+  const headersList = await headers();
+  const signature = headersList.get("stripe-signature");
 
-  let event: Stripe.Event;
+  if (!signature) {
+    return NextResponse.json(
+      { error: "Missing stripe-signature header" },
+      { status: 400 }
+    );
+  }
 
   try {
-    event = stripe.webhooks.constructEvent(
+    const event = stripe.webhooks.constructEvent(
       body,
       signature,
       process.env.STRIPE_WEBHOOK_SECRET!
     );
 
-    console.log("Webhook event received:", event.type);
+    console.log("Webhook received:", event.type);
 
     if (event.type === "checkout.session.completed") {
       const session = event.data.object as Stripe.Checkout.Session;
-      console.log("Session metadata:", session.metadata);
 
-      const appId = session.metadata?.app_id;
-      const userId = session.metadata?.user_id;
-      const packageType = session.metadata?.package_type;
+      const { app_id, user_id, package_type } = session.metadata || {};
 
-      if (appId && userId && packageType) {
-        const supabase = await createClient();
+      if (!app_id || !user_id || !package_type) {
+        throw new Error("Missing required metadata");
+      }
 
-        // Create purchase record
-        const { data, error } = await supabase.from("purchases").insert({
-          user_id: userId,
-          app_id: appId,
-          package_type: packageType,
-          amount: session.amount_total! / 100,
-          status: "completed",
-          expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
-        });
+      const supabase = await createClient();
 
-        if (error) {
-          console.error("Error inserting purchase:", error);
-          return NextResponse.json(
-            { error: "Failed to create purchase" },
-            { status: 500 }
-          );
-        }
+      const { error } = await supabase.from("purchases").insert({
+        user_id,
+        app_id,
+        package_type,
+        amount: session.amount_total! / 100,
+        status: "completed",
+        expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+      });
 
-        console.log("Purchase created successfully:", data);
-      } else {
-        console.error("Missing required metadata:", {
-          appId,
-          userId,
-          packageType,
-        });
+      if (error) {
+        console.error("Supabase error:", error);
+        throw error;
       }
     }
 
@@ -65,8 +58,14 @@ export async function POST(req: Request) {
   } catch (err) {
     console.error("Webhook error:", err);
     return NextResponse.json(
-      { error: `Webhook Error: ${err instanceof Error ? err.message : ""}` },
+      { error: err instanceof Error ? err.message : "Unknown error" },
       { status: 400 }
     );
   }
 }
+
+export const config = {
+  api: {
+    bodyParser: false,
+  },
+};
