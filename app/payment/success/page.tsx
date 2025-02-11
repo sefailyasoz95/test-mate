@@ -10,12 +10,12 @@ function PaymentSuccessContent() {
 
   useEffect(() => {
     if (sessionId) {
-      // Optionally verify the session
       setTimeout(() => {
-        router.push("/dashboard");
+        // Use absolute URL to avoid localhost
+        window.location.href = `${process.env.NEXT_PUBLIC_APP_URL}/dashboard`;
       }, 3000);
     }
-  }, [sessionId, router]);
+  }, [sessionId]);
 
   return (
     <div className="text-center">

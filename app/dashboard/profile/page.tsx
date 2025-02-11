@@ -51,7 +51,7 @@ export default function ProfilePage() {
           </div>
           <div>
             <label className="text-sm font-medium">Name</label>
-            <p className="text-lg">{profile?.full_name || "Not set"}</p>
+            <p className="text-lg">{"User"}</p>
           </div>
         </CardContent>
       </Card>

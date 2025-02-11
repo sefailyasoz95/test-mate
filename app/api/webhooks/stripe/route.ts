@@ -12,8 +12,8 @@ const relevantEvents = new Set([
   "payment_intent.succeeded",
 ]);
 
-// This is important for Next.js edge functions
-export const runtime = "edge";
+// Disable edge runtime as it's causing issues with crypto
+// export const runtime = "edge";
 
 // Disable body parser
 export const config = {
@@ -38,7 +38,9 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
-    event = stripe.webhooks.constructEvent(body, sig, webhookSecret);
+
+    // Use constructEventAsync instead of constructEvent
+    event = await stripe.webhooks.constructEventAsync(body, sig, webhookSecret);
   } catch (err: any) {
     console.error("Webhook signature verification failed:", err.message);
     return NextResponse.json(

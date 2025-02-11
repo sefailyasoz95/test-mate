@@ -5,12 +5,12 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2025-01-27.acacia",
 });
 
-// Get the domain from environment variable
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL;
-
 export async function POST(req: Request) {
   try {
     const { appId, userId, productId, packageType } = await req.json();
+
+    // Get base URL from request
+    const origin = req.headers.get("origin") || process.env.NEXT_PUBLIC_APP_URL;
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
@@ -21,8 +21,8 @@ export async function POST(req: Request) {
         },
       ],
       mode: "payment",
-      success_url: `${APP_URL}/payment/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${APP_URL}/dashboard`,
+      success_url: `${origin}/payment/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${origin}/dashboard`,
       metadata: {
         app_id: appId,
         user_id: userId,

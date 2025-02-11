@@ -3,7 +3,6 @@ import { useEffect, useState } from "react";
 
 interface Profile {
   email: string;
-  full_name: string | null;
 }
 
 interface User {
@@ -51,13 +50,12 @@ export function useAuth() {
       } = await supabase.auth.getSession();
       const { data } = await supabase
         .from("profiles")
-        .select("email, full_name")
+        .select("email")
         .eq("id", userId)
         .single();
 
       setProfile({
         email: data?.email || session?.user?.email || "",
-        full_name: data?.full_name,
       });
     } catch (error) {
       console.error("Error loading profile:", error);
