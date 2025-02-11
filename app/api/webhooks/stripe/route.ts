@@ -28,60 +28,50 @@ export async function POST(request: NextRequest) {
   const sig = headersList.get("stripe-signature");
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
-  let event: Stripe.Event;
-
-  try {
-    if (!sig || !webhookSecret) {
-      return NextResponse.json(
-        { error: "Missing signature or webhook secret" },
-        { status: 400 }
-      );
-    }
-
-    // Use constructEventAsync instead of constructEvent
-    event = await stripe.webhooks.constructEventAsync(body, sig, webhookSecret);
-  } catch (err: any) {
+  if (!sig || !webhookSecret) {
     return NextResponse.json(
-      { error: `Webhook Error: ${err.message}` },
+      { error: "Missing signature or webhook secret" },
       { status: 400 }
     );
   }
 
-  if (relevantEvents.has(event.type)) {
-    try {
-      if (event.type === "checkout.session.completed") {
-        const session = event.data.object as Stripe.Checkout.Session;
-        const { app_id, user_id, package_type } = session.metadata || {};
+  try {
+    const event = await stripe.webhooks.constructEventAsync(
+      body,
+      sig,
+      webhookSecret
+    );
 
-        if (!app_id || !user_id || !package_type) {
-          throw new Error("Missing required metadata");
-        }
+    if (event.type === "checkout.session.completed") {
+      const session = event.data.object as Stripe.Checkout.Session;
+      const { app_id, user_id, package_type } = session.metadata || {};
 
-        const res = NextResponse.next();
-        const cookieStore = request.cookies;
-        const supabase = await createServer({ cookies: () => cookieStore });
-        const { error } = await supabase.from("purchases").insert({
-          user_id,
-          app_id,
-          package_type,
-          amount: session.amount_total! / 100,
-          status: "completed",
-          expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-        });
-
-        if (error) {
-          throw error;
-        }
+      if (!app_id || !user_id || !package_type) {
+        return NextResponse.json(
+          { error: "Missing required metadata" },
+          { status: 400 }
+        );
       }
 
-      return NextResponse.json({ received: true });
-    } catch (error) {
-      return NextResponse.json(
-        { error: "Webhook handler failed" },
-        { status: 500 }
-      );
-    }
-  }
+      const supabase = await createServer({ cookies: () => request.cookies });
 
-  return NextResponse.json({ received: true });
+      await supabase.from("purchases").insert({
+        user_id,
+        app_id,
+        package_type,
+        amount: session.amount_total! / 100,
+        status: "completed",
+        expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+      });
+
+      return NextResponse.json({ status: "success" });
+    }
+
+    return NextResponse.json({ received: true });
+  } catch (err) {
+    return NextResponse.json(
+      { error: "Webhook signature verification failed" },
+      { status: 400 }
+    );
+  }
 }

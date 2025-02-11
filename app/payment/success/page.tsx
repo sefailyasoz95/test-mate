@@ -14,8 +14,15 @@ function PaymentSuccessContent() {
       toast.success("Payment successful!", {
         description: "Redirecting to dashboard...",
       });
+
+      // Add a small delay to ensure webhook has processed
       setTimeout(() => {
         window.location.href = `${process.env.NEXT_PUBLIC_APP_URL}/dashboard`;
+      }, 5000); // Increased to 5 seconds
+    } else {
+      toast.error("Payment verification failed");
+      setTimeout(() => {
+        window.location.href = "/dashboard";
       }, 3000);
     }
   }, [sessionId]);
