@@ -11,7 +11,6 @@ function PaymentSuccessContent() {
   useEffect(() => {
     if (sessionId) {
       setTimeout(() => {
-        // Use absolute URL to avoid localhost
         window.location.href = `${process.env.NEXT_PUBLIC_APP_URL}/dashboard`;
       }, 3000);
     }
