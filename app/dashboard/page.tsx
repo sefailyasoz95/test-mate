@@ -15,6 +15,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { CreateAppForm } from "@/components/dashboard/CreateAppForm";
+import { AllocateTestersModal } from "@/components/dashboard/AllocateTestersModal";
 
 interface DashboardStats {
   totalApps: number;
@@ -233,10 +234,17 @@ export default function DashboardPage() {
                           {app.package_name}
                         </p>
                       </div>
-                      <p className="text-sm text-muted-foreground">
-                        Created on{" "}
-                        {new Date(app.created_at).toLocaleDateString()}
-                      </p>
+                      <div className="flex flex-col items-end gap-2">
+                        <AllocateTestersModal
+                          appId={app.id}
+                          appName={app.name}
+                          userId={user?.id || ""}
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          Created on{" "}
+                          {new Date(app.created_at).toLocaleDateString()}
+                        </p>
+                      </div>
                     </div>
                   ))
                 )}
