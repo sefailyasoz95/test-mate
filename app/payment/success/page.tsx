@@ -1,0 +1,28 @@
+"use client";
+
+import { useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+
+export default function PaymentSuccess() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const sessionId = searchParams.get("session_id");
+
+  useEffect(() => {
+    if (sessionId) {
+      // Optionally verify the session
+      setTimeout(() => {
+        router.push("/dashboard");
+      }, 3000);
+    }
+  }, [sessionId, router]);
+
+  return (
+    <div className="flex min-h-screen items-center justify-center">
+      <div className="text-center">
+        <h1 className="text-2xl font-bold mb-4">Payment Successful!</h1>
+        <p>Redirecting you back to dashboard...</p>
+      </div>
+    </div>
+  );
+}
