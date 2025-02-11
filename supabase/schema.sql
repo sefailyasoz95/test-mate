@@ -126,6 +126,11 @@ CREATE POLICY "Users can create own apps"
   ON apps FOR INSERT 
   WITH CHECK (auth.uid() = user_id);
 
+CREATE POLICY "Enable insert for authenticated users only" ON public.purchases
+  FOR INSERT
+  TO authenticated
+  WITH CHECK (auth.uid() = user_id);
+
 -- Enable Row Level Security on all tables
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE purchases ENABLE ROW LEVEL SECURITY;
