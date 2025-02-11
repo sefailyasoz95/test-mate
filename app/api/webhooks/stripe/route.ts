@@ -7,6 +7,14 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2025-01-27.acacia",
 });
 
+const relevantEvents = new Set([
+  "checkout.session.completed",
+  "payment_intent.succeeded",
+]);
+
+// This is important for Next.js edge functions
+export const runtime = "edge";
+
 // Disable body parser
 export const config = {
   api: {
@@ -15,64 +23,65 @@ export const config = {
 };
 
 export async function POST(request: Request) {
-  try {
-    const body = await request.text();
-    const headersList = await headers();
-    const signature = headersList.get("stripe-signature");
+  const body = await request.text();
+  const headersList = await headers();
+  const sig = headersList.get("stripe-signature");
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
-    if (!signature) {
+  let event: Stripe.Event;
+
+  try {
+    if (!sig || !webhookSecret) {
+      console.error("Missing signature or webhook secret");
       return NextResponse.json(
-        { error: "Missing stripe-signature header" },
+        { error: "Missing signature or webhook secret" },
         { status: 400 }
       );
     }
-
-    // Verify webhook signature
-    let event: Stripe.Event;
-    try {
-      event = stripe.webhooks.constructEvent(
-        body,
-        signature,
-        process.env.STRIPE_WEBHOOK_SECRET!
-      );
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Unknown error";
-      console.error("Webhook signature verification failed:", errorMessage);
-      return NextResponse.json({ error: errorMessage }, { status: 400 });
-    }
-
-    // Handle the event
-    if (event.type === "checkout.session.completed") {
-      const session = event.data.object as Stripe.Checkout.Session;
-      const { app_id, user_id, package_type } = session.metadata || {};
-
-      if (!app_id || !user_id || !package_type) {
-        throw new Error("Missing required metadata");
-      }
-
-      const supabase = await createClient();
-
-      const { error } = await supabase.from("purchases").insert({
-        user_id,
-        app_id,
-        package_type,
-        amount: session.amount_total! / 100,
-        status: "completed",
-        expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-      });
-
-      if (error) {
-        console.error("Supabase error:", error);
-        throw error;
-      }
-    }
-
-    return NextResponse.json({ received: true });
-  } catch (err) {
-    console.error("Webhook error:", err);
+    event = stripe.webhooks.constructEvent(body, sig, webhookSecret);
+  } catch (err: any) {
+    console.error("Webhook signature verification failed:", err.message);
     return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Unknown error" },
+      { error: `Webhook Error: ${err.message}` },
       { status: 400 }
     );
   }
+
+  if (relevantEvents.has(event.type)) {
+    try {
+      if (event.type === "checkout.session.completed") {
+        const session = event.data.object as Stripe.Checkout.Session;
+        const { app_id, user_id, package_type } = session.metadata || {};
+
+        if (!app_id || !user_id || !package_type) {
+          throw new Error("Missing required metadata");
+        }
+
+        const supabase = await createClient();
+        const { error } = await supabase.from("purchases").insert({
+          user_id,
+          app_id,
+          package_type,
+          amount: session.amount_total! / 100,
+          status: "completed",
+          expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        });
+
+        if (error) {
+          console.error("Database error:", error);
+          throw error;
+        }
+      }
+
+      return NextResponse.json({ received: true });
+    } catch (error) {
+      console.error("Webhook handler failed:", error);
+      return NextResponse.json(
+        { error: "Webhook handler failed" },
+        { status: 500 }
+      );
+    }
+  }
+
+  return NextResponse.json({ received: true });
 }

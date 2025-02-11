@@ -2,6 +2,8 @@ import { createClient } from "@/utils/supabase/server";
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+
 export async function GET(request: Request) {
   // The `/auth/callback` route is required for the server-side auth flow implemented
   // by the SSR package. It exchanges an auth code for the user's session.
@@ -14,7 +16,7 @@ export async function GET(request: Request) {
   // If there's an error in the URL, log it and redirect to error page
   if (error) {
     console.error("Auth error:", error, errorDescription);
-    return NextResponse.redirect(`${requestUrl.origin}/auth-error`);
+    return NextResponse.redirect(`${APP_URL}/auth-error`);
   }
 
   if (code) {
@@ -41,13 +43,13 @@ export async function GET(request: Request) {
         throw new Error("Profile creation failed");
       }
 
-      return NextResponse.redirect(`${requestUrl.origin}/dashboard`);
+      return NextResponse.redirect(`${APP_URL}/dashboard`);
     } catch (error) {
       console.error("Auth callback error:", error);
-      return NextResponse.redirect(`${requestUrl.origin}/auth-error`);
+      return NextResponse.redirect(`${APP_URL}/auth-error`);
     }
   }
 
   // No code or error, redirect to home
-  return NextResponse.redirect(requestUrl.origin);
+  return NextResponse.redirect(APP_URL);
 }
