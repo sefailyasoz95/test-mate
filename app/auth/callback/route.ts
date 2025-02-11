@@ -7,7 +7,11 @@ export async function GET(request: NextRequest) {
   // The `/auth/callback` route is required for the server-side auth flow implemented
   // by the SSR package. It exchanges an auth code for the user's session.
   // https://supabase.com/docs/guides/auth/server-side/nextjs
-  console.log("Auth callback started, URL:", request.url);
+  console.log("=== Auth Callback Debug ===");
+  console.log("1. Full request URL:", request.url);
+  console.log("2. APP_URL value:", process.env.NEXT_PUBLIC_APP_URL);
+  console.log("3. Origin:", request.headers.get("origin"));
+  console.log("4. Referer:", request.headers.get("referer"));
 
   const requestUrl = new URL(request.url);
   const code = requestUrl.searchParams.get("code");
@@ -33,7 +37,7 @@ export async function GET(request: NextRequest) {
     const { data, error } = await supabase.auth.exchangeCodeForSession(code);
 
     if (error) {
-      console.error("Exchange error:", error);
+      console.error("5. Exchange error:", error);
       return NextResponse.redirect(`${APP_URL}/auth-error`);
     }
 
@@ -42,18 +46,19 @@ export async function GET(request: NextRequest) {
       data: { session },
     } = await supabase.auth.getSession();
 
-    if (!session) {
-      console.error("No session found after exchange");
-      return NextResponse.redirect(`${APP_URL}/auth-error`);
-    }
+    console.log("6. Session established:", !!session);
+    console.log("7. Redirecting to:", `${APP_URL}/dashboard`);
 
-    console.log("Session established, redirecting to dashboard...");
     const response = NextResponse.redirect(`${APP_URL}/dashboard`);
 
-    // Copy auth cookies to the response
+    // Log cookies being set
     const supabaseCookies = request.cookies
       .getAll()
       .filter((cookie) => cookie.name.startsWith("sb-"));
+    console.log(
+      "8. Auth cookies:",
+      supabaseCookies.map((c) => c.name)
+    );
 
     for (const cookie of supabaseCookies) {
       response.cookies.set(cookie.name, cookie.value, {
@@ -65,7 +70,7 @@ export async function GET(request: NextRequest) {
 
     return response;
   } catch (error) {
-    console.error("Auth callback error:", error);
+    console.error("9. Callback error:", error);
     return NextResponse.redirect(`${APP_URL}/auth-error`);
   }
 }

@@ -22,6 +22,7 @@ import { useTheme } from "next-themes";
 const Hero = () => {
   const { theme } = useTheme();
   const [mounted, setMounted] = useState(false);
+  console.log("2. APP_URL value:", process.env.NEXT_PUBLIC_APP_URL);
 
   // Wait until mounted to avoid hydration mismatch
   useEffect(() => {
@@ -45,7 +46,6 @@ const Hero = () => {
             prompt: "consent",
           },
           redirectTo: `${window.location.origin}/auth/callback`,
-          scopes: "email profile",
         },
       });
 
@@ -53,11 +53,8 @@ const Hero = () => {
         console.error("SignIn Error:", error.message);
         throw error;
       }
-
-      // The OAuth flow will handle the redirect
     } catch (error) {
       console.error("Error signing in:", error);
-      // You could add a toast notification here
     }
   };
 
