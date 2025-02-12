@@ -5,6 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/lib/supabase/client";
 import { useEffect, useState } from "react";
+import { trackEvent } from "@/lib/firebase/config";
 import { Activity, Package, Clock, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -87,11 +88,15 @@ export default function DashboardPage() {
 	}
 	useEffect(() => {
 		fetchDashboardData();
+		// Track dashboard page view
+		trackEvent("dashboard_view");
 	}, [user?.id]);
 
 	const handleCreateSuccess = () => {
 		fetchDashboardData();
 		setIsCreateDialogOpen(false);
+		// Track app creation success
+		trackEvent("app_created");
 	};
 
 	if (isLoading) {

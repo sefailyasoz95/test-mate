@@ -2,6 +2,8 @@ import { Geist } from "next/font/google";
 import { ThemeProvider } from "next-themes";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
+import { initFirebase } from "@/lib/firebase/config";
+import { cn } from "@/lib/utils";
 
 export const metadata = {
 	icons: {
@@ -56,14 +58,17 @@ const geistSans = Geist({
 	subsets: ["latin"],
 });
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: any) {
+	// Initialize Firebase
+	await initFirebase();
+
 	return (
-		<html lang='en' className={geistSans.className} suppressHydrationWarning>
-			<body className='min-h-screen bg-background text-foreground'>
-				<ThemeProvider attribute='class' defaultTheme='system' enableSystem disableTransitionOnChange>
+		<html lang='en' suppressHydrationWarning>
+			<body className={cn("min-h-screen bg-background font-sans antialiased", geistSans.className)}>
+				<ThemeProvider attribute='class' defaultTheme='system' enableSystem>
+					<Toaster />
 					{children}
 				</ThemeProvider>
-				<Toaster />
 			</body>
 		</html>
 	);
