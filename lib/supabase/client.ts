@@ -8,110 +8,114 @@ const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 console.log("Supabase URL:", SUPABASE_URL);
 
 // Browser client with cookie handling
-export const createClient = createBrowserClient(
-  SUPABASE_URL,
-  SUPABASE_ANON_KEY,
-  {
-    cookies: {
-      get(name: string) {
-        if (typeof document === "undefined") return "";
-        return document.cookie
-          .split("; ")
-          .find((row) => row.startsWith(`${name}=`))
-          ?.split("=")[1];
-      },
-      set(name: string, value: string, options: CookieOptions) {
-        if (typeof document === "undefined") return;
-        document.cookie = `${name}=${value}; path=/; max-age=${
-          options.maxAge ?? 0
-        }`;
-      },
-      remove(name: string, options: CookieOptions) {
-        if (typeof document === "undefined") return;
-        document.cookie = `${name}=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT`;
-      },
-    },
-    auth: {
-      flowType: "pkce",
-      detectSessionInUrl: true,
-      autoRefreshToken: true,
-      persistSession: true,
-      storage: {
-        getItem: (key) => {
-          console.log("Getting storage key:", key);
-          return typeof window !== "undefined"
-            ? window.localStorage.getItem(key)
-            : null;
-        },
-        setItem: (key, value) => {
-          console.log("Setting storage key:", key);
-          if (typeof window !== "undefined") {
-            window.localStorage.setItem(key, value);
-          }
-        },
-        removeItem: (key) => {
-          console.log("Removing storage key:", key);
-          if (typeof window !== "undefined") {
-            window.localStorage.removeItem(key);
-          }
-        },
-      },
-    },
-  }
-);
+export const createClient = createBrowserClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+	cookies: {
+		get(name: string) {
+			if (typeof document === "undefined") return "";
+			const cookie = document.cookie.split("; ").find((row) => row.startsWith(`${name}=`));
+			return cookie ? decodeURIComponent(cookie.split("=")[1]) : "";
+		},
+		set(name: string, value: string, options: CookieOptions) {
+			if (typeof document === "undefined") return;
+			let cookie = `${name}=${encodeURIComponent(value)}; path=/`;
+			if (options.maxAge) cookie += `; max-age=${options.maxAge}`;
+			if (options.domain) cookie += `; domain=${options.domain}`;
+			if (options.secure) cookie += `; secure`;
+			if (options.sameSite) cookie += `; samesite=${options.sameSite}`;
+			document.cookie = cookie;
+		},
+		remove(name: string, options: CookieOptions) {
+			if (typeof document === "undefined") return;
+			document.cookie = `${name}=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT; ${options.secure ? "secure; " : ""}${options.sameSite ? `samesite=${options.sameSite}; ` : ""}`;
+		},
+	},
+	auth: {
+		flowType: "pkce",
+		detectSessionInUrl: true,
+		autoRefreshToken: true,
+		persistSession: true,
+		storage: {
+			getItem: (key) => {
+				if (typeof window === "undefined") return null;
+				try {
+					return window.localStorage.getItem(key);
+				} catch (error) {
+					console.warn("LocalStorage access error:", error);
+					return null;
+				}
+			},
+			setItem: (key, value) => {
+				if (typeof window === "undefined") return;
+				try {
+					window.localStorage.setItem(key, value);
+				} catch (error) {
+					console.warn("LocalStorage write error:", error);
+				}
+			},
+			removeItem: (key) => {
+				if (typeof window === "undefined") return;
+				try {
+					window.localStorage.removeItem(key);
+				} catch (error) {
+					console.warn("LocalStorage remove error:", error);
+				}
+			},
+		},
+	},
+});
 
 // Server client for server components/api routes
 export const createServer = async (context: { cookies: any }) => {
-  const cookieStore = await context.cookies();
+	const cookieStore = await context.cookies();
 
-  return createServerClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-    cookies: {
-      get(name: string) {
-        return cookieStore.get(name)?.value;
-      },
-      set(name: string, value: string, options: CookieOptions) {
-        try {
-          cookieStore.set(name, value, options);
-        } catch (error) {
-          console.warn("Cookie cannot be set:", error);
-        }
-      },
-      remove(name: string, options: CookieOptions) {
-        try {
-          cookieStore.set(name, "", { ...options, maxAge: -1 });
-        } catch (error) {
-          console.warn("Cookie cannot be removed:", error);
-        }
-      },
-    },
-  });
+	return createServerClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+		cookies: {
+			get(name: string) {
+				return cookieStore.get(name)?.value;
+			},
+			set(name: string, value: string, options: CookieOptions) {
+				try {
+					cookieStore.set(name, value, options);
+				} catch (error) {
+					console.warn("Cookie cannot be set:", error);
+				}
+			},
+			remove(name: string, options: CookieOptions) {
+				try {
+					cookieStore.set(name, "", { ...options, maxAge: -1 });
+				} catch (error) {
+					console.warn("Cookie cannot be removed:", error);
+				}
+			},
+		},
+	});
 };
 
 // Middleware client
 export const createMiddleware = async (context: { cookies: any }) => {
-  const cookieStore = context.cookies();
+	const cookieStore = context.cookies();
 
-  return createServerClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-    cookies: {
-      get(name: string) {
-        return cookieStore.get(name)?.value;
-      },
-      set(name: string, value: string, options: CookieOptions) {
-        try {
-          cookieStore.set(name, value, options);
-        } catch (error) {
-          console.warn("Cookie cannot be set:", error);
-        }
-      },
-      remove(name: string, options: CookieOptions) {
-        try {
-          cookieStore.set(name, "", { ...options, maxAge: -1 });
-        } catch (error) {
-          console.warn("Cookie cannot be removed:", error);
-        }
-      },
-    },
-  });
+	return createServerClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+		cookies: {
+			get(name: string) {
+				return cookieStore.get(name)?.value;
+			},
+			set(name: string, value: string, options: CookieOptions) {
+				try {
+					cookieStore.set(name, value, options);
+				} catch (error) {
+					console.warn("Cookie cannot be set:", error);
+				}
+			},
+			remove(name: string, options: CookieOptions) {
+				try {
+					cookieStore.set(name, "", { ...options, maxAge: -1 });
+				} catch (error) {
+					console.warn("Cookie cannot be removed:", error);
+				}
+			},
+		},
+	});
 };
 
 // Export a pre-configured browser client instance

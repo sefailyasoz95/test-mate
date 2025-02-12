@@ -3,57 +3,67 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 export async function middleware(req: NextRequest) {
-  console.log("Middleware starting, path:", req.nextUrl.pathname);
-  console.log(
-    "Cookies present:",
-    req.cookies.getAll().map((c) => c.name)
-  );
+	const res = NextResponse.next();
+	const cookieStore = req.cookies;
+	const supabase = await createMiddleware({ cookies: () => cookieStore });
 
-  // Skip middleware for auth-related paths
-  if (
-    req.nextUrl.pathname.startsWith("/auth/") ||
-    req.nextUrl.pathname === "/auth-error"
-  ) {
-    return NextResponse.next();
-  }
+	try {
+		const {
+			data: { session },
+			error,
+		} = await supabase.auth.getSession();
 
-  const res = NextResponse.next();
-  const supabase = await createMiddleware({ cookies: () => req.cookies });
+		// Add debug information to response headers
+		res.headers.set("x-middleware-cache", "no-cache");
+		res.headers.set("x-debug-session", session ? "exists" : "none");
+		res.headers.set("x-debug-url", req.nextUrl.pathname);
 
-  try {
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
+		// Handle auth errors gracefully
+		if (error) {
+			if (!req.nextUrl.pathname.startsWith("/dashboard")) {
+				return res;
+			}
+			return NextResponse.redirect(new URL("/", req.url));
+		}
 
-    console.log("Session check result:", session ? "Found" : "Not found");
+		// Skip auth check for auth callback
+		if (req.nextUrl.pathname.startsWith("/auth/callback")) {
+			return res;
+		}
 
-    if (session) {
-      if (req.nextUrl.pathname === "/") {
-        console.log("Redirecting to dashboard - user is logged in");
-        return NextResponse.redirect(new URL("/dashboard", req.url));
-      }
-    } else {
-      if (req.nextUrl.pathname.startsWith("/dashboard")) {
-        console.log("Redirecting to home - user is not logged in");
-        return NextResponse.redirect(new URL("/", req.url));
-      }
-    }
+		// Protect dashboard routes
+		if (!session && req.nextUrl.pathname.startsWith("/dashboard")) {
+			return NextResponse.redirect(new URL("/", req.url));
+		}
 
-    return res;
-  } catch (error) {
-    return res;
-  }
+		// Redirect authenticated users from landing page to dashboard
+		if (session && req.nextUrl.pathname === "/") {
+			return NextResponse.redirect(new URL("/dashboard", req.url));
+		}
+
+		return res;
+	} catch (error) {
+		console.error("Middleware error:", error);
+		// Clear auth cookies on error
+		res.cookies.delete("sb-access-token");
+		res.cookies.delete("sb-refresh-token");
+
+		if (!req.nextUrl.pathname.startsWith("/dashboard")) {
+			return res;
+		}
+		return NextResponse.redirect(new URL("/", req.url));
+	}
 }
 
 export const config = {
-  matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - api (API routes)
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     */
-    "/((?!api|_next/static|_next/image|favicon.ico).*)",
-  ],
+	matcher: [
+		/*
+		 * Match all request paths except for the ones starting with:
+		 * - api (API routes)
+		 * - _next/static (static files)
+		 * - _next/image (image optimization files)
+		 * - favicon.ico (favicon file)
+		 */
+		"/((?!api|_next/static|_next/image|favicon.ico).*)",
+	],
 };
