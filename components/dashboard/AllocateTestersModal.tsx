@@ -29,21 +29,22 @@ const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!
 export function AllocateTestersModal({ appId, appName, userId }: { appId: string; appName: string; userId: string }) {
 	const [products, setProducts] = useState<Product[]>([]);
 	const [isLoading, setIsLoading] = useState(true);
+	const [open, setOpen] = useState(false);
+	const toggleOpen = () => setOpen(!open);
 
-	useEffect(() => {
-		async function fetchProducts() {
-			try {
-				const response = await fetch("/api/products");
-				const data = await response.json();
-				setProducts(data);
-			} catch (error) {
-			} finally {
-				setIsLoading(false);
-			}
+	async function fetchProducts() {
+		try {
+			const response = await fetch("/api/products");
+			const data = await response.json();
+			setProducts(data);
+		} catch (error) {
+		} finally {
+			setIsLoading(false);
 		}
-
-		fetchProducts();
-	}, []);
+	}
+	useEffect(() => {
+		open && fetchProducts();
+	}, [open]);
 
 	const features = {
 		single_tester: ["1 Pre-verified Tester", "Instant Access", "Google Play Ready", "24/7 Support"],
@@ -58,7 +59,7 @@ export function AllocateTestersModal({ appId, appName, userId }: { appId: string
 	};
 
 	return (
-		<Dialog>
+		<Dialog open={open} onOpenChange={toggleOpen}>
 			<DialogTrigger asChild>
 				<Button variant='outline' size='sm'>
 					<Users className='h-4 w-4 mr-2' />

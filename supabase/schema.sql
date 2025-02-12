@@ -80,6 +80,9 @@ CREATE TABLE IF NOT EXISTS apps (
   user_id UUID REFERENCES auth.users(id) NOT NULL,
   name TEXT NOT NULL,
   package_name TEXT NOT NULL UNIQUE,
+  play_store_link TEXT,
+  app_review TEXT,
+  app_screenshots TEXT[],
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
 );
 

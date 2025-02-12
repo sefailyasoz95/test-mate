@@ -1,6 +1,5 @@
 import { createServer } from "@/lib/supabase/client";
 import { NextRequest, NextResponse } from "next/server";
-import { toast } from "sonner";
 
 export async function GET(request: NextRequest) {
 	const requestUrl = new URL(request.url);
