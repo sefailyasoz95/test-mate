@@ -4,9 +4,6 @@ import { type CookieOptions } from "@supabase/ssr";
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
-// Add debug log
-console.log("Supabase URL:", SUPABASE_URL);
-
 // Browser client with cookie handling
 export const createClient = createBrowserClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
 	cookies: {
@@ -40,7 +37,6 @@ export const createClient = createBrowserClient(SUPABASE_URL, SUPABASE_ANON_KEY,
 				try {
 					return window.localStorage.getItem(key);
 				} catch (error) {
-					console.warn("LocalStorage access error:", error);
 					return null;
 				}
 			},
@@ -48,17 +44,13 @@ export const createClient = createBrowserClient(SUPABASE_URL, SUPABASE_ANON_KEY,
 				if (typeof window === "undefined") return;
 				try {
 					window.localStorage.setItem(key, value);
-				} catch (error) {
-					console.warn("LocalStorage write error:", error);
-				}
+				} catch (error) {}
 			},
 			removeItem: (key) => {
 				if (typeof window === "undefined") return;
 				try {
 					window.localStorage.removeItem(key);
-				} catch (error) {
-					console.warn("LocalStorage remove error:", error);
-				}
+				} catch (error) {}
 			},
 		},
 	},
@@ -76,16 +68,12 @@ export const createServer = async (context: { cookies: any }) => {
 			set(name: string, value: string, options: CookieOptions) {
 				try {
 					cookieStore.set(name, value, options);
-				} catch (error) {
-					console.warn("Cookie cannot be set:", error);
-				}
+				} catch (error) {}
 			},
 			remove(name: string, options: CookieOptions) {
 				try {
 					cookieStore.set(name, "", { ...options, maxAge: -1 });
-				} catch (error) {
-					console.warn("Cookie cannot be removed:", error);
-				}
+				} catch (error) {}
 			},
 		},
 	});
@@ -103,16 +91,12 @@ export const createMiddleware = async (context: { cookies: any }) => {
 			set(name: string, value: string, options: CookieOptions) {
 				try {
 					cookieStore.set(name, value, options);
-				} catch (error) {
-					console.warn("Cookie cannot be set:", error);
-				}
+				} catch (error) {}
 			},
 			remove(name: string, options: CookieOptions) {
 				try {
 					cookieStore.set(name, "", { ...options, maxAge: -1 });
-				} catch (error) {
-					console.warn("Cookie cannot be removed:", error);
-				}
+				} catch (error) {}
 			},
 		},
 	});

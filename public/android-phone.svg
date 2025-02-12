@@ -1,0 +1,27 @@
+<svg width="200" height="200" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Android Body -->
+  <circle cx="100" cy="95" r="45" fill="#3DDC84"/>
+  
+  <!-- Android Head -->
+  <circle cx="100" cy="50" r="30" fill="#3DDC84"/>
+  
+  <!-- Antennae -->
+  <line x1="85" y1="25" x2="80" y2="15" stroke="#3DDC84" stroke-width="3" stroke-linecap="round"/>
+  <line x1="115" y1="25" x2="120" y2="15" stroke="#3DDC84" stroke-width="3" stroke-linecap="round"/>
+  
+  <!-- Eyes -->
+  <circle cx="90" cy="45" r="4" fill="white"/>
+  <circle cx="110" cy="45" r="4" fill="white"/>
+  
+  <!-- Arms -->
+  <path d="M55 95 Q45 95 40 85" stroke="#3DDC84" stroke-width="8" stroke-linecap="round"/>
+  <path d="M145 95 Q155 95 160 85" stroke="#3DDC84" stroke-width="8" stroke-linecap="round"/>
+  
+  <!-- Phone -->
+  <rect x="75" y="75" width="50" height="80" rx="5" fill="#2D2D2D"/>
+  <rect x="80" y="80" width="40" height="65" rx="2" fill="#4CAF50" opacity="0.3"/>
+  
+  <!-- Hands holding phone -->
+  <path d="M65 95 Q70 100 75 95" stroke="#3DDC84" stroke-width="8" stroke-linecap="round"/>
+  <path d="M135 95 Q130 100 125 95" stroke="#3DDC84" stroke-width="8" stroke-linecap="round"/>
+</svg>
