@@ -31,6 +31,7 @@ const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!
 export function AllocateTestersModal({ appId, appName, userId }: { appId: string; appName: string; userId: string }) {
 	const [products, setProducts] = useState<Product[]>([]);
 	const [isLoading, setIsLoading] = useState(true);
+	const [isCheckingPreviousPurchases, setIsCheckingPreviousPurchases] = useState(false);
 	const [open, setOpen] = useState(false);
 	const [quantity, setQuantity] = useState(1);
 	const toggleOpen = () => setOpen(!open);
@@ -149,14 +150,37 @@ export function AllocateTestersModal({ appId, appName, userId }: { appId: string
 												"w-full py-6 transition-all duration-300",
 												isFull
 													? "bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary"
-													: "hover:bg-primary/10"
+													: "hover:bg-primary/10",
+												isCheckingPreviousPurchases && "animate-bounce"
 											)}
 											size='lg'
 											variant={isFull ? "default" : "outline"}
+											disabled={isCheckingPreviousPurchases}
 											onClick={async () => {
 												try {
+													setIsCheckingPreviousPurchases(true);
+													const purchaseResponse = await fetch(`/api/purchases?appId=${appId}&userId=${userId}`);
+													const purchaseHistory = await purchaseResponse.json();
+													const totalAmount = purchaseHistory.reduce(
+														(acc: number, purchase: any) => acc + purchase.amount,
+														0
+													);
+													const totalAllocatedTesters = totalAmount / 0.99;
+
+													if (totalAllocatedTesters >= 12) {
+														toast.error("You bought the maximum number of testers for this app");
+														setIsCheckingPreviousPurchases(false);
+														return;
+													}
+
+													if (totalAllocatedTesters + quantity > 12) {
+														toast.error("Selected tester quantity exceeds allowed maximum tester allocation!");
+														setIsCheckingPreviousPurchases(false);
+														return;
+													}
 													if (isFull) {
 														toast.error("While MVP is in progress, we cannot offer this package");
+														setIsCheckingPreviousPurchases(false);
 														return;
 													}
 													const stripe = await stripePromise;
@@ -180,12 +204,14 @@ export function AllocateTestersModal({ appId, appName, userId }: { appId: string
 													const result = await stripe.redirectToCheckout({
 														sessionId,
 													});
+													setIsCheckingPreviousPurchases(false);
 
 													if (result.error) {
+														toast.error(result.error.message ?? "something went wrong!");
 													}
 												} catch (error) {}
 											}}>
-											Get Started
+											{isCheckingPreviousPurchases ? "Loading..." : "Get Started"}
 										</Button>
 									</CardFooter>
 								</Card>
