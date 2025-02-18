@@ -7,7 +7,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 
 export async function POST(req: Request) {
   try {
-    const { appId, userId, productId, packageType } = await req.json();
+    const { appId, userId, productId, packageType, quantity = 1 } = await req.json();
 
     // Get base URL from request
     const origin = req.headers.get("origin") || process.env.NEXT_PUBLIC_APP_URL;
@@ -17,7 +17,7 @@ export async function POST(req: Request) {
       line_items: [
         {
           price: productId,
-          quantity: 1,
+          quantity: packageType === "single_tester" ? Math.min(quantity, 5) : 1,
         },
       ],
       mode: "payment",

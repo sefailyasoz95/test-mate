@@ -15,6 +15,7 @@ import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import { loadStripe } from "@stripe/stripe-js";
 import { toast } from "sonner";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 
 interface Product {
 	id: string;
@@ -31,6 +32,7 @@ export function AllocateTestersModal({ appId, appName, userId }: { appId: string
 	const [products, setProducts] = useState<Product[]>([]);
 	const [isLoading, setIsLoading] = useState(true);
 	const [open, setOpen] = useState(false);
+	const [quantity, setQuantity] = useState(1);
 	const toggleOpen = () => setOpen(!open);
 
 	async function fetchProducts() {
@@ -112,7 +114,26 @@ export function AllocateTestersModal({ appId, appName, userId }: { appId: string
 										</CardDescription>
 									</CardHeader>
 									<CardContent className='flex-grow'>
-										<div className='text-3xl md:text-4xl font-bold mb-6 flex items-baseline gap-2'>{product.price}</div>
+										<div className='text-3xl md:text-4xl font-bold mb-6 flex items-baseline gap-2'>
+											{product.price}
+											{!isFull && (
+												<div className='flex items-center gap-2 ml-4'>
+													<label className='text-sm text-muted-foreground'>Quantity:</label>
+													<Select value={quantity.toString()} onValueChange={(value) => setQuantity(Number(value))}>
+														<SelectTrigger className='w-[70px]'>
+															<SelectValue placeholder='1' />
+														</SelectTrigger>
+														<SelectContent>
+															{[1, 2, 3, 4, 5].map((num) => (
+																<SelectItem key={num} value={num.toString()}>
+																	{num}
+																</SelectItem>
+															))}
+														</SelectContent>
+													</Select>
+												</div>
+											)}
+										</div>
 										<ul className='space-y-3'>
 											{featureList.map((feature, i) => (
 												<li key={i} className='flex items-center gap-3'>
@@ -151,6 +172,7 @@ export function AllocateTestersModal({ appId, appName, userId }: { appId: string
 															userId,
 															productId: product.priceId,
 															packageType: product.name.includes("Active") ? "full_package" : "single_tester",
+															quantity: !isFull ? quantity : 1,
 														}),
 													});
 
