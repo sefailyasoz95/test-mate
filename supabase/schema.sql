@@ -23,6 +23,7 @@ CREATE TABLE IF NOT EXISTS profiles (
   id UUID REFERENCES auth.users(id) PRIMARY KEY,
   email TEXT NOT NULL,
   google_id TEXT,
+  super_admin BOOLEAN DEFAULT false,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
   subscription_status subscription_status DEFAULT 'expired'
@@ -88,51 +89,49 @@ CREATE TABLE IF NOT EXISTS apps (
 
 -- Drop existing policies if they exist
 DROP POLICY IF EXISTS "Users can view own profile" ON profiles;
-DROP POLICY IF EXISTS "Users can update own profile" ON profiles;
-DROP POLICY IF EXISTS "Users can view own purchases" ON purchases;
-DROP POLICY IF EXISTS "Users can view assigned testers" ON tester_accounts;
-DROP POLICY IF EXISTS "Users can view own subscriptions" ON subscriptions;
-DROP POLICY IF EXISTS "Trigger can create profile" ON profiles;
+DROP POLICY IF EXISTS "Super admins can view all profiles" ON profiles;
 DROP POLICY IF EXISTS "Users can view own apps" ON apps;
-DROP POLICY IF EXISTS "Users can create own apps" ON apps;
+DROP POLICY IF EXISTS "Super admins can view all apps" ON apps;
+DROP POLICY IF EXISTS "Users can view own purchases" ON purchases;
+DROP POLICY IF EXISTS "Super admins can view all purchases" ON purchases;
 
--- Create RLS Policies
+-- Create simplified policies that avoid recursion
 CREATE POLICY "Users can view own profile" 
   ON profiles FOR SELECT 
   USING (auth.uid() = id);
 
-CREATE POLICY "Users can update own profile" 
-  ON profiles FOR UPDATE 
-  USING (auth.uid() = id);
+-- Create separate policy for super admins
+CREATE POLICY "Super admins can view all" 
+  ON profiles FOR SELECT 
+  USING (EXISTS (
+    SELECT 1 FROM auth.users
+    WHERE auth.uid() = auth.users.id 
+    AND auth.uid() IN (SELECT id FROM profiles WHERE super_admin = true)
+  ));
 
-CREATE POLICY "Users can view own purchases" 
-  ON purchases FOR SELECT 
-  USING (auth.uid() = user_id);
-
-CREATE POLICY "Users can view assigned testers" 
-  ON tester_accounts FOR SELECT 
-  USING (auth.uid() = assigned_to OR assigned_to IS NULL);
-
-CREATE POLICY "Users can view own subscriptions" 
-  ON subscriptions FOR SELECT 
-  USING (auth.uid() = user_id);
-
-CREATE POLICY "Trigger can create profile"
-  ON profiles FOR INSERT
-  TO PUBLIC;
-
-CREATE POLICY "Users can view own apps" 
+-- Update apps policy
+CREATE POLICY "Users can view own apps or super_admin can view all" 
   ON apps FOR SELECT 
-  USING (auth.uid() = user_id);
+  USING (
+    auth.uid() = user_id OR 
+    EXISTS (
+      SELECT 1 FROM profiles 
+      WHERE id = auth.uid() 
+      AND super_admin = true
+    )
+  );
 
-CREATE POLICY "Users can create own apps" 
-  ON apps FOR INSERT 
-  WITH CHECK (auth.uid() = user_id);
-
-CREATE POLICY "Enable insert for authenticated users only" ON public.purchases
-  FOR INSERT
-  TO authenticated
-  WITH CHECK (auth.uid() = user_id);
+-- Update purchases policy
+CREATE POLICY "Users can view own purchases or super_admin can view all" 
+  ON purchases FOR SELECT 
+  USING (
+    auth.uid() = user_id OR 
+    EXISTS (
+      SELECT 1 FROM profiles 
+      WHERE id = auth.uid() 
+      AND super_admin = true
+    )
+  );
 
 -- Enable Row Level Security on all tables
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;

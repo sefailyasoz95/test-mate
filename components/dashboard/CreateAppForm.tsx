@@ -13,7 +13,7 @@ const formSchema = z.object({
 	package_name: z
 		.string()
 		.regex(/^([a-z][a-z0-9_]*\.)+[a-z][a-z0-9_]*$/, "Must be a valid package name (e.g., com.example.app)"),
-	play_store_link: z.string().url("Must be a valid URL").optional().or(z.literal("")),
+	play_store_link: z.string().url("Must be a valid URL").min(1, "Play Store link is required"),
 });
 
 export function CreateAppForm({ onSuccess, onCancel }: { onSuccess: () => void; onCancel: () => void }) {
@@ -99,7 +99,7 @@ export function CreateAppForm({ onSuccess, onCancel }: { onSuccess: () => void; 
 					name='play_store_link'
 					render={({ field }) => (
 						<FormItem>
-							<FormLabel>Play Store Link (Optional)</FormLabel>
+							<FormLabel>Play Store Link</FormLabel>
 							<FormControl>
 								<Input placeholder='https://play.google.com/store/apps/details?id=your.app.id' {...field} />
 							</FormControl>
