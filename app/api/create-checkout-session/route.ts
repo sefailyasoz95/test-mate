@@ -7,7 +7,13 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 
 export async function POST(req: Request) {
   try {
-    const { appId, userId, productId, packageType, quantity = 1 } = await req.json();
+    const {
+      appId,
+      userId,
+      productId,
+      packageType,
+      quantity = 1,
+    } = await req.json();
 
     // Get base URL from request
     const origin = req.headers.get("origin") || process.env.NEXT_PUBLIC_APP_URL;
@@ -21,8 +27,8 @@ export async function POST(req: Request) {
         },
       ],
       mode: "payment",
-      success_url: `${origin}/payment/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${origin}/dashboard`,
+      success_url: `${process.env.NEXT_PUBLIC_SITE_URL}/payment/success?session_id={CHECKOUT_SESSION_ID}&appId=${appId}`,
+      cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL}/dashboard`,
       metadata: {
         app_id: appId,
         user_id: userId,
