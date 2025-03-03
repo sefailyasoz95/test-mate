@@ -178,11 +178,7 @@ export function AllocateTestersModal({ appId, appName, userId }: { appId: string
 														setIsCheckingPreviousPurchases(false);
 														return;
 													}
-													if (isFull) {
-														toast.error("While MVP is in progress, we cannot offer this package");
-														setIsCheckingPreviousPurchases(false);
-														return;
-													}
+
 													const stripe = await stripePromise;
 													if (!stripe) throw new Error("Stripe failed to load");
 
