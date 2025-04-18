@@ -16,6 +16,7 @@ import { useTheme } from "next-themes";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
+import Link from "next/link";
 
 const Hero = () => {
 	const { theme } = useTheme();
@@ -121,6 +122,12 @@ const Hero = () => {
 										<FaGoogle className='h-5 w-5' />
 										Continue with Google
 									</Button>
+									<small className='text-muted-foreground text-center'>
+										By signing in you would be accepting our{" "}
+										<Link className='underline' href={"/privacy"}>
+											privacy policy
+										</Link>
+									</small>
 								</div>
 							</DialogContent>
 						</Dialog>
