@@ -6,7 +6,9 @@ import { useEffect, useState } from "react";
 interface User {
   id: string;
   email: string;
-  package_type?: string;
+  role?: "user" | "tester" | "admin";
+  isTester: boolean;
+  credits: number;
 }
 
 export function useAuth() {
@@ -42,7 +44,9 @@ export function useAuth() {
         setUser({
           id: profile.id,
           email: profile.email,
-          package_type: profile.package_type,
+          role: profile.role,
+          isTester: profile.is_tester ?? false,
+          credits: profile.credits ?? 0,
         });
       } catch (error) {
         setUser(null);

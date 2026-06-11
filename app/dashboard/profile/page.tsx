@@ -45,10 +45,6 @@ export default function ProfilePage() {
 						<label className='text-sm font-medium'>Email</label>
 						<p className='text-lg'>{user?.email}</p>
 					</div>
-					<div>
-						<label className='text-sm font-medium'>Name</label>
-						<p className='text-lg'>{"User"}</p>
-					</div>
 				</CardContent>
 			</Card>
 

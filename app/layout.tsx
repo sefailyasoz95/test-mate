@@ -7,9 +7,13 @@ import { cn } from "@/lib/utils";
 
 export const metadata = {
 	icons: {
-		icon: "/testmate_icon.png",
-		shortcut: "/testmate_icon.png",
-		apple: "/testmate_icon.png",
+		icon: [
+			{ url: "/favicon.ico", sizes: "any" },
+			{ url: "/icon-32.png", type: "image/png", sizes: "32x32" },
+			{ url: "/icon-192.png", type: "image/png", sizes: "192x192" },
+		],
+		shortcut: "/icon-32.png",
+		apple: "/apple-icon.png",
 	},
 	title: "TestMate - Instant App Testing Solution | Streamline Your App Testing",
 	description:

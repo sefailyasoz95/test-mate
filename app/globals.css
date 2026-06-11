@@ -66,4 +66,125 @@
   body {
     @apply bg-background text-foreground;
   }
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+/* ============================================================
+   Landing page design utilities (Apple-grade)
+   ============================================================ */
+
+/* Accent tokens — refined indigo→violet→sky, tuned per theme */
+:root {
+  --tm-accent: 243 75% 59%;       /* indigo-600 */
+  --tm-accent-2: 269 75% 60%;     /* violet */
+  --tm-accent-3: 199 89% 52%;     /* sky */
+  --tm-grid: 0 0% 0%;
+}
+.dark {
+  --tm-accent: 245 80% 67%;
+  --tm-accent-2: 269 85% 72%;
+  --tm-accent-3: 199 92% 62%;
+  --tm-grid: 0 0% 100%;
+}
+
+/* Gradient text */
+.text-gradient {
+  background-image: linear-gradient(
+    100deg,
+    hsl(var(--tm-accent)),
+    hsl(var(--tm-accent-2)),
+    hsl(var(--tm-accent-3))
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
+/* Subtle dotted/line grid background */
+.bg-grid {
+  background-image: linear-gradient(
+      to right,
+      hsl(var(--tm-grid) / 0.06) 1px,
+      transparent 1px
+    ),
+    linear-gradient(to bottom, hsl(var(--tm-grid) / 0.06) 1px, transparent 1px);
+  background-size: 56px 56px;
+}
+
+/* Radial mask to fade edges of a layer */
+.mask-radial {
+  -webkit-mask-image: radial-gradient(ellipse at center, #000 30%, transparent 72%);
+  mask-image: radial-gradient(ellipse at center, #000 30%, transparent 72%);
+}
+.mask-fade-b {
+  -webkit-mask-image: linear-gradient(to bottom, #000 60%, transparent);
+  mask-image: linear-gradient(to bottom, #000 60%, transparent);
+}
+
+/* Aurora blobs */
+@keyframes tm-aurora {
+  0%   { transform: translate(0, 0) scale(1); }
+  33%  { transform: translate(4%, -6%) scale(1.12); }
+  66%  { transform: translate(-5%, 4%) scale(0.94); }
+  100% { transform: translate(0, 0) scale(1); }
+}
+.animate-aurora { animation: tm-aurora 18s ease-in-out infinite; }
+
+/* Slow float for hero accents */
+@keyframes tm-float {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-14px); }
+}
+.animate-float { animation: tm-float 7s ease-in-out infinite; }
+
+/* Conic shine sweep for borders/cards */
+@keyframes tm-shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.animate-shimmer {
+  background-size: 200% 100%;
+  animation: tm-shimmer 3.5s linear infinite;
+}
+
+/* Marquee */
+@keyframes tm-marquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+.animate-marquee { animation: tm-marquee 28s linear infinite; }
+
+/* Gradient border helper */
+.gradient-ring {
+  position: relative;
+}
+.gradient-ring::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    130deg,
+    hsl(var(--tm-accent) / 0.6),
+    hsl(var(--tm-accent-2) / 0.3) 40%,
+    transparent 70%
+  );
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-aurora,
+  .animate-float,
+  .animate-shimmer,
+  .animate-marquee {
+    animation: none !important;
+  }
+  html { scroll-behavior: auto; }
 }

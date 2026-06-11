@@ -13,11 +13,6 @@ export async function middleware(req: NextRequest) {
 			error,
 		} = await supabase.auth.getSession();
 
-		// Add debug information to response headers
-		res.headers.set("x-middleware-cache", "no-cache");
-		res.headers.set("x-debug-session", session ? "exists" : "none");
-		res.headers.set("x-debug-url", req.nextUrl.pathname);
-
 		// Handle auth errors gracefully
 		if (error) {
 			if (!req.nextUrl.pathname.startsWith("/dashboard")) {

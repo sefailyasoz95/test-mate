@@ -2,10 +2,10 @@ import { createBrowserClient, createServerClient } from "@supabase/ssr";
 import { type CookieOptions } from "@supabase/ssr";
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+const SUPABASE_PUBLISHABLE_KEY = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!;
 
 // Browser client with cookie handling
-export const createClient = createBrowserClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+export const createClient = createBrowserClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
 	cookies: {
 		get(name: string) {
 			if (typeof document === "undefined") return "";
@@ -60,7 +60,7 @@ export const createClient = createBrowserClient(SUPABASE_URL, SUPABASE_ANON_KEY,
 export const createServer = async (context: { cookies: any }) => {
 	const cookieStore = await context.cookies();
 
-	return createServerClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+	return createServerClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
 		cookies: {
 			get(name: string) {
 				return cookieStore.get(name)?.value;
@@ -83,7 +83,7 @@ export const createServer = async (context: { cookies: any }) => {
 export const createMiddleware = async (context: { cookies: any }) => {
 	const cookieStore = context.cookies();
 
-	return createServerClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+	return createServerClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
 		cookies: {
 			get(name: string) {
 				return cookieStore.get(name)?.value;

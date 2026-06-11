@@ -12,15 +12,21 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useRouter } from "next/navigation";
-import { Moon, Sun } from "lucide-react";
+import { Moon, Sun, FlaskConical } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useAuth } from "@/hooks/useAuth";
 import Link from "next/link";
+import { useState } from "react";
+import { BecomeTesterModal } from "@/components/dashboard/BecomeTesterModal";
 
 export function UserNav() {
 	const router = useRouter();
 	const { theme, setTheme } = useTheme();
 	const { user, isLoading, signOut } = useAuth();
+	const [testerOpen, setTesterOpen] = useState(false);
+	const [optedIn, setOptedIn] = useState(false);
+
+	const isTester = optedIn || !!user?.isTester;
 
 	const handleSignOut = async () => {
 		await signOut();
@@ -50,6 +56,12 @@ export function UserNav() {
 					<DropdownMenuItem asChild>
 						<Link href='/dashboard/profile'>Profile</Link>
 					</DropdownMenuItem>
+					{!isLoading && user && !isTester && (
+						<DropdownMenuItem onClick={() => setTesterOpen(true)}>
+							<FlaskConical className='h-4 w-4 mr-2' />
+							Become a tester
+						</DropdownMenuItem>
+					)}
 					<DropdownMenuItem onClick={() => setTheme(theme === "dark" ? "light" : "dark")}>
 						{theme === "dark" ? <Sun className='h-4 w-4 mr-2' /> : <Moon className='h-4 w-4 mr-2' />}
 						Toggle Theme
@@ -63,6 +75,12 @@ export function UserNav() {
 				<DropdownMenuSeparator />
 				<DropdownMenuItem onClick={handleSignOut}>Log out</DropdownMenuItem>
 			</DropdownMenuContent>
+
+			<BecomeTesterModal
+				open={testerOpen}
+				onOpenChange={setTesterOpen}
+				onOptedIn={() => setOptedIn(true)}
+			/>
 		</DropdownMenu>
 	);
 }

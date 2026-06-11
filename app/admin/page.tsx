@@ -1,25 +1,20 @@
-import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { AdminDashboard } from "@/components/admin/AdminDashboard";
-import { createServer } from "@/lib/supabase/client";
+import { getCurrentUser } from "@/lib/supabase/route";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export default async function AdminPage() {
-	const supabase = await createServer({ cookies });
+	const user = await getCurrentUser();
+	if (!user) redirect("/auth");
 
-	const {
-		data: { session },
-	} = await supabase.auth.getSession();
+	const supabase = createAdminClient();
+	const { data: profile } = await supabase
+		.from("profiles")
+		.select("role")
+		.eq("id", user.id)
+		.single();
 
-	if (!session) {
-		redirect("/auth");
-	}
-
-	// Check if user is super admin
-	const { data: profile } = await supabase.from("profiles").select("super_admin").eq("id", session.user.id).single();
-
-	if (!profile?.super_admin) {
-		redirect("/dashboard");
-	}
+	if (profile?.role !== "admin") redirect("/dashboard");
 
 	return <AdminDashboard />;
 }

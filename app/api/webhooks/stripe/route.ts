@@ -1,23 +1,11 @@
 import { headers } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
-import { createClient } from "@supabase/supabase-js";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 	apiVersion: "2025-01-27.acacia",
 });
-
-const relevantEvents = new Set(["checkout.session.completed", "payment_intent.succeeded"]);
-
-// Disable edge runtime as it's causing issues with crypto
-// export const runtime = "edge";
-
-// Disable body parser
-export const config = {
-	api: {
-		bodyParser: false,
-	},
-};
 
 export async function POST(request: NextRequest) {
 	const body = await request.text();
@@ -26,47 +14,69 @@ export async function POST(request: NextRequest) {
 	const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
 	if (!sig || !webhookSecret) {
-		return NextResponse.json({ error: "Missing signature or webhook secret" }, { status: 400 });
-	}
-
-	try {
-		const event = await stripe.webhooks.constructEventAsync(body, sig, webhookSecret);
-
-		if (event.type === "checkout.session.completed") {
-			const session = event.data.object as Stripe.Checkout.Session;
-			const { app_id, user_id, package_type } = session.metadata || {};
-
-			if (!app_id || !user_id || !package_type) {
-				return NextResponse.json({ error: "Missing required metadata" }, { status: 400 });
-			}
-
-			const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
-				auth: {
-					autoRefreshToken: false,
-					persistSession: false,
-				},
-			});
-
-			const inserted = await supabase.from("purchases").insert({
-				user_id,
-				app_id,
-				package_type,
-				amount: session.amount_total! / 100,
-				status: "completed",
-				expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-			});
-			console.log("inserted: ", JSON.stringify(inserted));
-
-			return NextResponse.json({ status: "success" });
-		}
-
-		return NextResponse.json({ received: true });
-	} catch (err) {
 		return NextResponse.json(
-			{
-				error: "Webhook signature verification failed: " + JSON.stringify(err),
-			},
+			{ error: "Missing signature or webhook secret" },
 			{ status: 400 }
 		);
 	}
+
+	let event: Stripe.Event;
+	try {
+		event = await stripe.webhooks.constructEventAsync(body, sig, webhookSecret);
+	} catch (err) {
+		return NextResponse.json(
+			{ error: "Webhook signature verification failed: " + JSON.stringify(err) },
+			{ status: 400 }
+		);
+	}
+
+	if (event.type === "checkout.session.completed") {
+		const session = event.data.object as Stripe.Checkout.Session;
+		const { order_id, app_id, user_id, package_id, quantity } = session.metadata || {};
+
+		if (!order_id || !app_id || !user_id || !package_id) {
+			return NextResponse.json({ error: "Missing required metadata" }, { status: 400 });
+		}
+
+		const supabase = createAdminClient();
+
+		// Mark order paid + record the payment intent
+		await supabase
+			.from("orders")
+			.update({
+				status: "paid",
+				stripe_payment_intent: (session.payment_intent as string) ?? null,
+			})
+			.eq("id", order_id);
+
+		// Idempotency: don't create a second cycle if one already exists
+		const { data: existing } = await supabase
+			.from("test_cycles")
+			.select("id")
+			.eq("order_id", order_id)
+			.maybeSingle();
+
+		if (!existing) {
+			const { data: pkg } = await supabase
+				.from("packages")
+				.select("tester_count")
+				.eq("id", package_id)
+				.single();
+
+			const qty = Number(quantity) || 1;
+			const testerTarget = (pkg?.tester_count ?? 12) * qty;
+
+			await supabase.from("test_cycles").insert({
+				order_id,
+				app_id,
+				user_id,
+				status: "pending_setup",
+				tester_target: testerTarget,
+			});
+		}
+
+		return NextResponse.json({ status: "success" });
+	}
+
+	return NextResponse.json({ received: true });
 }
