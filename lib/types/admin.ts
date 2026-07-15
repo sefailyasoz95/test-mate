@@ -3,6 +3,7 @@ import type {
 	CycleStatus,
 	Order,
 	Package,
+	Profile,
 	TestCycle,
 	TesterAccount,
 	TesterAssignment,
@@ -24,4 +25,15 @@ export type AdminOrder = Order & {
 	package: Package | null;
 	buyer: { id: string; email: string } | null;
 	cycles: { id: string; status: CycleStatus; is_rerun: boolean }[];
+};
+
+export type AdminUser = Profile & {
+	appsCount: number;
+	ordersCount: number;
+	totalSpentUsd: number;
+};
+
+export type AdminUserDetail = Profile & {
+	apps: App[];
+	orders: (Order & { app: App | null; package: Package | null })[];
 };

@@ -7,9 +7,11 @@ import { Badge } from "@/components/ui/badge";
 import { CycleManageModal } from "@/components/admin/CycleManageModal";
 import { TesterPool } from "@/components/admin/TesterPool";
 import { OrdersTable } from "@/components/admin/OrdersTable";
+import { UsersTable } from "@/components/admin/UsersTable";
+import { UserDetailModal } from "@/components/admin/UserDetailModal";
 import { CYCLE_STATUS_LABEL } from "@/lib/cycle";
 import type { CycleStatus, TesterAccount } from "@/lib/types/db";
-import type { AdminCycle, AdminOrder } from "@/lib/types/admin";
+import type { AdminCycle, AdminOrder, AdminUser } from "@/lib/types/admin";
 
 const STATUS_VARIANT: Record<CycleStatus, "default" | "secondary" | "destructive" | "outline"> = {
 	pending_setup: "outline",
@@ -30,22 +32,27 @@ export function AdminDashboard() {
 	const [cycles, setCycles] = useState<AdminCycle[]>([]);
 	const [testers, setTesters] = useState<TesterAccount[]>([]);
 	const [orders, setOrders] = useState<AdminOrder[]>([]);
+	const [users, setUsers] = useState<AdminUser[]>([]);
 	const [isLoading, setIsLoading] = useState(true);
 	const [selected, setSelected] = useState<AdminCycle | null>(null);
+	const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
 
 	async function fetchData() {
 		try {
-			const [cyclesRes, testersRes, ordersRes] = await Promise.all([
+			const [cyclesRes, testersRes, ordersRes, usersRes] = await Promise.all([
 				fetch("/api/admin/cycles"),
 				fetch("/api/admin/testers"),
 				fetch("/api/admin/orders"),
+				fetch("/api/admin/users"),
 			]);
 			const cyclesData = cyclesRes.ok ? await cyclesRes.json() : [];
 			const testersData = testersRes.ok ? await testersRes.json() : [];
 			const ordersData = ordersRes.ok ? await ordersRes.json() : [];
+			const usersData = usersRes.ok ? await usersRes.json() : [];
 			setCycles(Array.isArray(cyclesData) ? cyclesData : []);
 			setTesters(Array.isArray(testersData) ? testersData : []);
 			setOrders(Array.isArray(ordersData) ? ordersData : []);
+			setUsers(Array.isArray(usersData) ? usersData : []);
 			// keep the open modal in sync with refreshed data
 			setSelected((prev) =>
 				prev ? cyclesData.find((c: AdminCycle) => c.id === prev.id) ?? null : null
@@ -68,10 +75,11 @@ export function AdminDashboard() {
 			<h1 className='text-3xl font-bold mb-6'>Admin · Operations</h1>
 
 			<Tabs defaultValue='cycles' className='w-full'>
-				<TabsList className='grid w-full max-w-[540px] grid-cols-3 mb-6'>
+				<TabsList className='grid w-full max-w-[680px] grid-cols-4 mb-6'>
 					<TabsTrigger value='cycles'>Cycles</TabsTrigger>
 					<TabsTrigger value='payments'>Payments</TabsTrigger>
 					<TabsTrigger value='testers'>Tester Pool</TabsTrigger>
+					<TabsTrigger value='users'>Users</TabsTrigger>
 				</TabsList>
 
 				<TabsContent value='cycles'>
@@ -156,6 +164,10 @@ export function AdminDashboard() {
 				<TabsContent value='testers'>
 					<TesterPool testers={testers} onChanged={fetchData} />
 				</TabsContent>
+
+				<TabsContent value='users'>
+					<UsersTable users={users} isLoading={isLoading} onSelect={setSelectedUser} />
+				</TabsContent>
 			</Tabs>
 
 			<CycleManageModal
@@ -163,6 +175,12 @@ export function AdminDashboard() {
 				open={!!selected}
 				onOpenChange={(open) => !open && setSelected(null)}
 				onChanged={fetchData}
+			/>
+
+			<UserDetailModal
+				user={selectedUser}
+				open={!!selectedUser}
+				onOpenChange={(open) => !open && setSelectedUser(null)}
 			/>
 		</div>
 	);

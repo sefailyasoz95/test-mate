@@ -214,6 +214,40 @@ begin new.updated_at = now(); return new; end; $$;
 create trigger profiles_touch    before update on profiles    for each row execute function touch_updated_at();
 create trigger test_cycles_touch before update on test_cycles for each row execute function touch_updated_at();
 
+-- Privilege-escalation guard: "profiles_update" below only checks
+-- auth.uid() = id, which (with no WITH CHECK) lets any signed-in user
+-- set their OWN role/is_tester/credits via a direct REST call. RLS
+-- can't compare NEW vs OLD, so lock these columns down here instead.
+-- The service-role backend (createAdminClient) is exempted.
+create or replace function protect_profile_privileged_columns()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if auth.role() = 'service_role' then
+    return new;
+  end if;
+
+  if new.role is distinct from old.role then
+    raise exception 'Cannot change role directly';
+  end if;
+  if new.is_tester is distinct from old.is_tester then
+    raise exception 'Cannot change is_tester directly';
+  end if;
+  if new.credits is distinct from old.credits then
+    raise exception 'Cannot change credits directly';
+  end if;
+
+  return new;
+end;
+$$;
+
+create trigger profiles_protect_privileged
+  before update on profiles
+  for each row execute function protect_profile_privileged_columns();
+
 -- ============================================================
 -- Row Level Security
 -- (writes to cycles/assignments/reports happen via service-role
